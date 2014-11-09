@@ -9,6 +9,9 @@
 
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
 
+#define OVR_D3D_VERSION 9
+#include <d3d9.h>
+
 
 
 // TODO: reference additional headers your program requires here

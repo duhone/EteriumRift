@@ -14,9 +14,9 @@ namespace OculusNative
 		DeviceManagerNative(void);
 		~DeviceManagerNative(void);
 
-		void EnumerateDevices(std::function<void (const DeviceInfo&)> _deviceInfo);
-		void EnumerateDevices(std::vector<DeviceInfo>& _deviceInfos); //needed if talking to sub standard languages like .net
-		DeviceNative* CreateDevice(int _DisplayID);
+		void EnumerateDevices(std::function<void (const DeviceInfo&)> a_deviceInfo, float a_quality);
+		void EnumerateDevices(std::vector<DeviceInfo>& a_deviceInfos, float a_quality);
+		DeviceNative* CreateDevice(DeviceConfig a_cfg);
 
 	private:
 		std::unique_ptr<class DeviceManagerNativeImpl> m_Pimpl;

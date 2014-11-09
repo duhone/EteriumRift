@@ -28,51 +28,13 @@ Device::!Device()
 void Device::UpdateStereoSettings()
 {
 	auto ssettings = m_Pimpl->GetStereoSettings();
-	m_StereoSettings.ProjectionCenterOffset = ssettings.ProjectionCenterOffset;
-	m_StereoSettings.FovY = ssettings.FovY;
-	m_StereoSettings.AspectRatio = ssettings.AspectRatio;
-	m_StereoSettings.ViewTranslation = ssettings.ViewTranslation;
-	
-	m_StereoSettings.DistortionK = gcnew array<float>(4);
-	m_StereoSettings.DistortionK[0] = ssettings.DistortionK[0];
-	m_StereoSettings.DistortionK[1] = ssettings.DistortionK[1];
-	m_StereoSettings.DistortionK[2] = ssettings.DistortionK[2];
-	m_StereoSettings.DistortionK[3] = ssettings.DistortionK[3];
-
-	m_StereoSettings.DistortionCenterOffset = gcnew array<float>(2);
-	m_StereoSettings.DistortionCenterOffset[0] = ssettings.DistortionCenterOffset[0];
-	m_StereoSettings.DistortionCenterOffset[1] = ssettings.DistortionCenterOffset[1];
-	
-	m_StereoSettings.DistortionScale = ssettings.DistortionScale;
-
-	
-	m_StereoSettings.ChromAberration = gcnew array<float>(4);
-	m_StereoSettings.ChromAberration[0] = ssettings.ChromAberration[0];
-	m_StereoSettings.ChromAberration[1] = ssettings.ChromAberration[1];
-	m_StereoSettings.ChromAberration[2] = ssettings.ChromAberration[2];
-	m_StereoSettings.ChromAberration[3] = ssettings.ChromAberration[3];
-
-	/*m_StereoSettings.Ortho = gcnew array<float>(16);
-	for(int y = 0;y < 4; ++y)
-	{
-		for(int x = 0;x < 4; ++x)
-		{
-			m_StereoSettings.Ortho[y*4+x] = ssettings.Ortho[x][y];
-		}
-	}*/
-
+	m_StereoSettings.FovY = ssettings.Fov;
+	m_StereoSettings.LeftProjection = ConvertMatrix(ssettings.LeftProjection);
+	m_StereoSettings.RightProjection = ConvertMatrix(ssettings.RightProjection);
+	m_StereoSettings.LeftViewAdjust = ConvertVector(ssettings.LeftViewAdjust);
+	m_StereoSettings.RightViewAdjust = ConvertVector(ssettings.RightViewAdjust);
 }
-
-void Device::SelectEye(EYE _eye)
-{
-	if(_eye == EYE::LEFT_EYE)
-		m_Pimpl->SelectEye(DeviceNative::LEFT_EYE);
-	else
-		m_Pimpl->SelectEye(DeviceNative::RIGHT_EYE);
-
-	UpdateStereoSettings();
-}
-
+		
 float Device::Calc2DOffset(float _depth)
 {
 	return m_Pimpl->Calc2DOffset(_depth);
@@ -80,16 +42,45 @@ float Device::Calc2DOffset(float _depth)
 
 void Device::Update()
 {
-	auto rotation = m_Pimpl->GetOrientation();
+	auto pose = m_Pimpl->GetPose();
+	m_Pose.Orientation.X = pose.Orientation[0];
+	m_Pose.Orientation.Y = pose.Orientation[1];
+	m_Pose.Orientation.Z = pose.Orientation[2];
+	m_Pose.Orientation.W = pose.Orientation[3];
+	m_Pose.Orientation.Conjugate();
 
-	m_Orientation = gcnew array<float>(4);
-	m_Orientation[0] = rotation[0];
-	m_Orientation[1] = rotation[1];
-	m_Orientation[2] = rotation[2];
-	m_Orientation[3] = rotation[3];
+	m_Pose.Position.X = -pose.Position[0];
+	m_Pose.Position.Y = -pose.Position[1];
+	m_Pose.Position.Z = -pose.Position[2];
 }
 
-void Device::ResetOrientation()
+RE::Oculus::Pose Device::GetPose()
 {
-	m_Pimpl->ResetOrientation();
+	return m_Pose;
 }
+
+void Device::ResetPose()
+{
+	m_Pimpl->ResetPose();
+}
+
+void Device::BeginFrame()
+{
+	m_Pimpl->BeginFrame();
+}
+
+void Device::EndFrame()
+{
+	m_Pimpl->EndFrame();
+}
+
+void Device::BeginEyeRender(RE::Oculus::EYE a_eye)
+{
+	m_Pimpl->BeginEyeRender(a_eye == RE::Oculus::EYE::LEFT_EYE ? RE::OculusNative::EYE::LEFT_EYE : RE::OculusNative::EYE::RIGHT_EYE);
+}
+
+void Device::EndEyeRender()
+{
+	m_Pimpl->EndEyeRender();
+}
+

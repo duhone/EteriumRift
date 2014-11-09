@@ -14,62 +14,53 @@ namespace OculusNative{
 		DeviceManagerNativeImpl();
 		~DeviceManagerNativeImpl();
 
-		void EnumerateDevices(function<void (const DeviceInfo&)> _deviceInfo);
-		DeviceNative* CreateDevice(int _DisplayID);
+		void EnumerateDevices(function<void (const DeviceInfo&)> a_deviceInfo, float a_quality);
+		DeviceNative* CreateDevice(DeviceConfig a_cfg);
 
 	private:
-		OVR::System m_OVRSystem;
-		OVR::Ptr<OVR::DeviceManager> m_OVRDeviceManager;
 	};
 }}
 
 DeviceManagerNativeImpl::DeviceManagerNativeImpl()
 {	
-	m_OVRDeviceManager = *OVR::DeviceManager::Create();
+	ovr_Initialize();
 }
 
 DeviceManagerNativeImpl::~DeviceManagerNativeImpl()
 {
+	ovr_Shutdown();
 }
 
-void DeviceManagerNativeImpl::EnumerateDevices(function<void (const DeviceInfo&)> _deviceInfo)
+void DeviceManagerNativeImpl::EnumerateDevices(function<void (const DeviceInfo&)> a_deviceInfo, float a_quality)
 {
 	DeviceInfo device;
-	auto deviceIter = m_OVRDeviceManager->EnumerateDevices<OVR::HMDDevice>();
-	while(deviceIter)
+	int hmdCount = ovrHmd_Detect();
+	for(int i = 0;i < hmdCount; ++i)
 	{
-		OVR::HMDInfo hmdInfo;
-		if(deviceIter.GetDeviceInfo(&hmdInfo))
+		auto hmd = ovrHmd_Create(i);
+		if(hmd)
 		{
-			device = Convert(hmdInfo);
-			_deviceInfo(device);
+			device = Convert(hmd, a_quality);
+
+			a_deviceInfo(device);
+			ovrHmd_Destroy(hmd);
 		}
-		deviceIter.Next();
 	}
 }
-DeviceNative* DeviceManagerNativeImpl::CreateDevice(int _DisplayID)
+
+DeviceNative* DeviceManagerNativeImpl::CreateDevice(DeviceConfig a_cfg)
 {
-	auto deviceIter = m_OVRDeviceManager->EnumerateDevices<OVR::HMDDevice>();
-	while(deviceIter)
+	int hmdCount = ovrHmd_Detect();
+	for(int i = 0;i < hmdCount; ++i)
 	{
-		OVR::HMDInfo hmdInfo;
-		if(deviceIter.GetDeviceInfo(&hmdInfo))
+		auto hmd = ovrHmd_Create(i);
+		if(hmd)
 		{
-			if(hmdInfo.DisplayId == _DisplayID)
-			{
-				auto hmdDevice = deviceIter.CreateDevice();
-				if(hmdDevice)
-				{
-					auto sensor = hmdDevice->GetSensor();
-					if(sensor)
-					{	
-						return new DeviceNative(hmdDevice, sensor);
-					}
-					hmdDevice->Release();
-				}
-			}
+			if(hmd->DisplayId == a_cfg.DisplayID)
+				return new DeviceNative((void*)hmd, a_cfg);
+			else
+				ovrHmd_Destroy(hmd);
 		}
-		deviceIter.Next();
 	}
 	return nullptr;
 }
@@ -83,19 +74,19 @@ DeviceManagerNative::~DeviceManagerNative(void)
 {
 }
 
-void DeviceManagerNative::EnumerateDevices(function<void (const DeviceInfo&)> _deviceInfo)
+void DeviceManagerNative::EnumerateDevices(function<void (const DeviceInfo&)> a_deviceInfo, float a_quality)
 {
-	m_Pimpl->EnumerateDevices(_deviceInfo);
+	m_Pimpl->EnumerateDevices(a_deviceInfo, a_quality);
 }
 
-void DeviceManagerNative::EnumerateDevices(std::vector<DeviceInfo>& _deviceInfos)
+void DeviceManagerNative::EnumerateDevices(std::vector<DeviceInfo>& a_deviceInfos, float a_quality)
 {
-	m_Pimpl->EnumerateDevices([&](const DeviceInfo& _deviceInfo){
-		_deviceInfos.push_back(_deviceInfo);
-	});
+	m_Pimpl->EnumerateDevices([&](const DeviceInfo& a_deviceInfo){
+		a_deviceInfos.push_back(a_deviceInfo);
+	}, a_quality);
 }
 
-DeviceNative* DeviceManagerNative::CreateDevice(int _DisplayID)
+DeviceNative* DeviceManagerNative::CreateDevice(DeviceConfig a_cfg)
 {
-	return m_Pimpl->CreateDevice(_DisplayID);
+	return m_Pimpl->CreateDevice(a_cfg);
 }
