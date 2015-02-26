@@ -52,7 +52,7 @@ DeviceNativeImpl::DeviceNativeImpl(ovrHmd a_device, DeviceConfig a_cfg) :
 
 	ovrD3D9Config cfg;
 	cfg.D3D9.Header.API = ovrRenderAPI_D3D9;
-	cfg.D3D9.Header.RTSize = OVR::Sizei(a_cfg.RenderTargetResolution[0], a_cfg.RenderTargetResolution[1]);
+	cfg.D3D9.Header.BackBufferSize = OVR::Sizei(a_cfg.RenderTargetResolution[0], a_cfg.RenderTargetResolution[1]);
 	cfg.D3D9.Header.Multisample = 1;
 	cfg.D3D9.pDevice = a_cfg.Device;
 	a_cfg.Device->GetSwapChain(0, &cfg.D3D9.pSwapChain);
